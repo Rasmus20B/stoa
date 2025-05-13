@@ -1,0 +1,24 @@
+
+Quotes = {
+  id = 1,
+  type = "Table",
+  fields = {}
+}
+
+Machines = {
+  id = 2,
+  type = "Table",
+  fields = {}
+}
+
+Quotes Machines = {
+  id = 1,
+  type = "Table Occurrence",
+  table = "Machines"
+}
+
+Quotes Machines 2 = {
+  id = 2,
+  type = "Table Occurrence",
+  table = "Machines"
+}
