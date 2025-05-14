@@ -3,19 +3,6 @@ use crate::error::{Error, Result};
 use crate::token::{SourceLoc, Token, TokenKind, TokenValue};
 use crate::keyvalue::{BlockValue, Key, KeyValueBlock, KeyValueEntry};
 
-pub enum TopLevelObject {
-    Table {
-        id: u32,
-        name: String,
-        entries: KeyValueBlock,
-    },
-    Field {
-        id: u32,
-        name: String,
-        entries: KeyValueBlock,
-    }
-}
-
 struct Parser<'a> {
     stream: std::iter::Peekable<std::slice::Iter<'a, Token>>,
     current: Option<&'a Token>,

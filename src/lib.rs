@@ -1,5 +1,4 @@
 // mod cache;
-mod compiler;
 pub mod diagnostic;
 mod error;
 mod keyvalue;
