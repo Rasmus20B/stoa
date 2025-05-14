@@ -1,0 +1,8 @@
+
+macro table($id, $name) = {
+    $name = {
+        id = $id,
+        type = "table",
+        $body,
+    }
+}

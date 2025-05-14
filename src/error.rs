@@ -7,6 +7,7 @@ pub enum Error {
     // Lexing
     Fs(std::io::Error),
     UnterminatedString,
+    MalformedMacroParameterName,
 
     // Parser
     UnexpectedToken(Token),

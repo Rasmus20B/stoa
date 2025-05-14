@@ -74,39 +74,14 @@ impl<'a> Parser<'a> {
     }
 }
 
-fn parse_macro_key(identifier: String, start_loc: SourceLoc, parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>) -> Result<KeyValueEntry> {
-    let next = match parser.next() {
-        Some(inner) => inner,
-        None => return Err(Error::UnexpectedEOF)
-    };
-
-    match &next.token_val {
-        TokenValue::Comma => Ok(KeyValueEntry::new(
-            Key::MacroValue(identifier),
-            start_loc,
-            BlockValue::Empty)),
-        TokenValue::Assignment => Ok(KeyValueEntry::new(
-            Key::MacroValue(identifier),
-            start_loc,
-            parse_value(parser, diagnostics)?)),
-        _ => unimplemented!()
-    }
-}
 fn parse_block(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>) -> Result<KeyValueBlock> {
+
     let mut block = KeyValueBlock { entries: vec![] };
 
     while let Some(token) = parser.next() {
         match &token.token_val {
             TokenValue::Identifier(s) => {
                 block.entries.push(parse_identifier_key(s.to_string(), token.source_loc, parser, diagnostics)?);
-                let peeked = parser.peek().unwrap();
-                if ![TokenValue::Comma, TokenValue::CloseBrace]
-                    .contains(&peeked.token_val) {
-                    return Err(Error::UnexpectedToken((*peeked).clone()))
-                }
-            },
-            TokenValue::MacroParameter(s) => {
-                block.entries.push(parse_macro_key(s.to_string(), token.source_loc, parser, diagnostics)?);
                 let peeked = parser.peek().unwrap();
                 if ![TokenValue::Comma, TokenValue::CloseBrace]
                     .contains(&peeked.token_val) {
@@ -131,7 +106,6 @@ fn parse_value(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>) -> Result
         TokenValue::OpenBrace => Ok(BlockValue::Block(parse_block(parser, diagnostics)?)),
         TokenValue::IntegerLiteral(n) => Ok(BlockValue::Literal(n.to_string())),
         TokenValue::String(s) => Ok(BlockValue::Literal(s.to_string())),
-        TokenValue::MacroParameter(p) => Ok(BlockValue::MacroValue(p.to_string())),
         _ => return Err(Error::UnexpectedToken((*token).clone()))
     }
 }
@@ -160,21 +134,6 @@ fn parse_identifier_key(identifier: String, start_loc: SourceLoc, parser: &mut P
     match &next.token_val {
         TokenValue::Identifier(s) => parse_identifier_key(identifier + " " + s, start_loc, parser, diagnostics),
         TokenValue::IntegerLiteral(n) => parse_identifier_key(identifier + " " + &n.to_string(), start_loc, parser, diagnostics),
-        TokenValue::MacroParameter(p) => {
-
-            Ok(KeyValueEntry::new(
-                Key::MacroValue(p.to_string()),
-                start_loc,
-                parser.peek()
-                    .is_some_and(|token| token.token_val.kind() == TokenKind::Assignment)
-                    .then(|| parse_value(parser, diagnostics))
-                    .or_else(|| Some(Ok(BlockValue::Empty))).unwrap().unwrap())
-            )
-        },
-        TokenValue::Comma => Ok(KeyValueEntry::new(
-            Key::MacroValue(identifier),
-            start_loc,
-            BlockValue::Empty)),
         TokenValue::Assignment => Ok(KeyValueEntry::new(
             Key::Name(identifier),
             start_loc,
@@ -190,19 +149,15 @@ fn parse_macro_args(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>) -> R
         match &token.token_val {
             TokenValue::MacroParameter(p) => { 
                 result.push(p.to_string());
-                parser.next();
                 let next = parser.peek();
 
                 if let Some(next) = next {
-                    let kind = next.token_val.kind();
-                    if kind == TokenKind::CloseParen {
-                        parser.next();
-                        return Ok(result)
-                    } else if kind == TokenKind::Comma {
-                        parser.next();
-                    } else { return Err(Error::UnexpectedToken((*next).clone())) }
+                    if [TokenKind::CloseParen, TokenKind::Comma]
+                            .contains(&next.token_val.kind()) {
+                    parser.next();
+                    }
                 } else {
-                    return Err(Error::UnexpectedEOF)
+                    return Err(Error::UnexpectedToken(()))
                 }
 
             }
@@ -210,6 +165,8 @@ fn parse_macro_args(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>) -> R
             _ => return Err(Error::UnexpectedToken((*token).clone()))
         }
     }
+
+
     Ok(result)
 }
 
@@ -221,7 +178,6 @@ fn parse_macro_definition(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>
         Some(inner) => inner,
         None => return Err(Error::UnexpectedEOF)
     };
-
     let args = if next.token_val.kind() == TokenKind::OpenParen {
         parse_macro_args(parser, diagnostics)?
     } else {
@@ -239,7 +195,6 @@ fn parse_macro_definition(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>
         TokenValue::OpenBrace => Ok(BlockValue::Block(parse_block(parser, diagnostics)?)),
         TokenValue::IntegerLiteral(n) => Ok(BlockValue::Literal(n.to_string())),
         TokenValue::String(s) => Ok(BlockValue::Literal(s.to_string())),
-        TokenValue::MacroParameter(p) => Ok(BlockValue::MacroValue(p.to_string())),
         _ => return Err(Error::UnexpectedToken((*next).clone()))
     }?;
 

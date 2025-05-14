@@ -2,7 +2,7 @@ use std::iter::Peekable;
 
 use crate::{
     diagnostic::Diagnostic,
-    error::Result,
+    error::{Error, Result},
     token::{match_keyword, SourceLoc, Token, TokenValue, KEYWORD_MAP},
 };
 
@@ -117,7 +117,6 @@ pub fn lex(text: &str, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<Token>> 
                 tokens.push(Token::new(value, SourceLoc::new(line, col)));
             }
             '"' => {
-
                 // TODO: Proper string parsing with escapes
                 let mut buffer = String::new();
                 while let Some(next_c) = iter.chars.peek() {
@@ -143,6 +142,26 @@ pub fn lex(text: &str, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<Token>> 
                 SourceLoc::new(line, col),
             )),
             ',' => tokens.push(Token::new(TokenValue::Comma, SourceLoc::new(line, col))),
+            '(' => tokens.push(Token::new(TokenValue::OpenParen, SourceLoc::new(line, col))),
+            ')' => tokens.push(Token::new(TokenValue::CloseParen, SourceLoc::new(line, col))),
+            '$' => {
+                let mut buffer = String::new();
+                let Some(next_c) = iter.chars.peek() else {
+                    return Err(Error::UnexpectedEOF)
+                };
+
+                if !next_c.is_alphabetic() { return Err(Error::MalformedMacroParameterName) }
+
+                while let Some(next_c) = iter.chars.peek() {
+                    if !next_c.is_alphanumeric() {
+                        break;
+                    }
+                    buffer.push(*next_c);
+                    iter.next();
+                }
+
+                tokens.push(Token::new(TokenValue::MacroParameter(buffer), SourceLoc::new(line, col)));
+            }
             _ => {}
         }
     }
