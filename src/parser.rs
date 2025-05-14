@@ -89,9 +89,10 @@ fn parse_macro_key(identifier: String, start_loc: SourceLoc, parser: &mut Parser
             Key::MacroValue(identifier),
             start_loc,
             parse_value(parser, diagnostics)?)),
-        _ => unimplemented!()
+        _ => return Err(Error::UnexpectedToken((*next).clone()))
     }
 }
+
 fn parse_block(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>) -> Result<KeyValueBlock> {
     let mut block = KeyValueBlock { entries: vec![] };
 
@@ -147,7 +148,7 @@ fn parse_identifier_value(identifier: String, start_loc: SourceLoc, parser: &mut
         TokenValue::Comma => return Ok(
             BlockValue::Literal(identifier)
         ),
-        _ => unimplemented!()
+        _ => return Err(Error::UnexpectedToken((*next).clone()))
     }
 }
 
@@ -179,7 +180,7 @@ fn parse_identifier_key(identifier: String, start_loc: SourceLoc, parser: &mut P
             Key::Name(identifier),
             start_loc,
             parse_value(parser, diagnostics)?)),
-        _ => unimplemented!()
+        _ => return Err(Error::UnexpectedToken((*next).clone()))
     }
 }
 
@@ -264,7 +265,7 @@ pub fn parse(tokens: &[Token], diagnostics: &mut Vec<Diagnostic>) -> Result<KeyV
             TokenValue::Macro => {
                 parse_macro_definition(&mut parser, diagnostics)?
             }
-            _ => unreachable!()
+            _ => return Err(Error::UnexpectedToken((*token).clone()))
         };
         entries.add(tmp);
     }
