@@ -165,11 +165,11 @@ fn parse_identifier_key(identifier: String, start_loc: SourceLoc, parser: &mut P
             Ok(KeyValueEntry::new(
                 Key::MacroValue(p.to_string()),
                 start_loc,
-                parser.peek()
-                    .is_some_and(|token| token.token_val.kind() == TokenKind::Assignment)
-                    .then(|| parse_value(parser, diagnostics))
-                    .or_else(|| Some(Ok(BlockValue::Empty))).unwrap().unwrap())
-            )
+                match parser.peek().filter(|t| t.token_val.kind() == TokenKind::Assignment) {
+                    Some(_) => parse_value(parser, diagnostics)?,
+                    None => BlockValue::Empty,
+                }
+            ))
         },
         TokenValue::Comma => Ok(KeyValueEntry::new(
             Key::MacroValue(identifier),
