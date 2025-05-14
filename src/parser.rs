@@ -99,7 +99,7 @@ fn parse_block(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>) -> Result
         match &token.token_val {
             TokenValue::Identifier(s) => {
                 block.entries.push(parse_identifier_key(s.to_string(), token.source_loc, parser, diagnostics)?);
-                let peeked = parser.peek().unwrap();
+                let peeked = parser.peek().ok_or(Error::UnexpectedEOF)?;
                 if ![TokenValue::Comma, TokenValue::CloseBrace]
                     .contains(&peeked.token_val) {
                     return Err(Error::UnexpectedToken((*peeked).clone()))
@@ -107,7 +107,7 @@ fn parse_block(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>) -> Result
             },
             TokenValue::MacroParameter(s) => {
                 block.entries.push(parse_macro_key(s.to_string(), token.source_loc, parser, diagnostics)?);
-                let peeked = parser.peek().unwrap();
+                let peeked = parser.peek().ok_or(Error::UnexpectedEOF)?;
                 if ![TokenValue::Comma, TokenValue::CloseBrace]
                     .contains(&peeked.token_val) {
                     return Err(Error::UnexpectedToken((*peeked).clone()))
