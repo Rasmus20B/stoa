@@ -52,6 +52,7 @@ pub enum TokenKind {
 
     Macro,
     MacroParameter,
+    MacroCall,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -79,6 +80,7 @@ pub enum TokenValue {
 
     Macro,
     MacroParameter(String),
+    MacroCall(String),
 }
 
 
@@ -105,6 +107,7 @@ impl TokenValue {
             Self::EOF =>TokenKind::EOF,
             Self::Macro => TokenKind::Macro,
             Self::MacroParameter(_) => TokenKind::MacroParameter,
+            Self::MacroCall(_) => TokenKind::MacroCall,
         }
     } 
 

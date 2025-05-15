@@ -6,3 +6,7 @@ macro table($id, $name) = {
         $body,
     }
 }
+
+@table(1, Quotes) = {
+  fields = {}
+}

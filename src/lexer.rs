@@ -162,6 +162,24 @@ pub fn lex(text: &str, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<Token>> 
 
                 tokens.push(Token::new(TokenValue::MacroParameter(buffer), SourceLoc::new(line, col)));
             }
+            '@' =>  {
+                let mut buffer = String::new();
+                let Some(next_c) = iter.chars.peek() else {
+                    return Err(Error::UnexpectedEOF)
+                };
+
+                if !next_c.is_alphabetic() { return Err(Error::MalformedMacroParameterName) }
+
+                while let Some(next_c) = iter.chars.peek() {
+                    if !next_c.is_alphanumeric() {
+                        break;
+                    }
+                    buffer.push(*next_c);
+                    iter.next();
+                }
+
+                tokens.push(Token::new(TokenValue::MacroCall(buffer), SourceLoc::new(line, col)));
+            },
             _ => {}
         }
     }
