@@ -117,9 +117,17 @@ impl TokenValue {
             _ => None,
         }
     }
+
     pub fn as_identifier(&self) -> Option<String> {
         match self {
             Self::Identifier(s) => Some(s.clone()),
+            _ => None,
+        }
+    }
+
+    pub fn as_macro_call(&self) -> Option<String> {
+        match self {
+            Self::MacroCall(c) => Some(c.to_string()),
             _ => None,
         }
     }
