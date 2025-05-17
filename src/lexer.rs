@@ -177,7 +177,6 @@ pub fn lex(text: &str, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<Token>> 
                     buffer.push(*next_c);
                     iter.next();
                 }
-
                 tokens.push(Token::new(TokenValue::MacroCall(buffer), SourceLoc::new(line, col)));
             },
             _ => {}

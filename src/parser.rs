@@ -171,7 +171,52 @@ fn parse_identifier_key(identifier: String, start_loc: SourceLoc, parser: &mut P
     }
 }
 
-fn parse_macro_args(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<String>> {
+fn parse_macro_arguments(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<String>> {
+    let mut result = vec![];
+
+    while let Some(token) = parser.peek() {
+        match &token.token_val {
+            TokenValue::Identifier(i) => { 
+                result.push(i.to_string());
+                parser.next();
+                let next = parser.peek();
+
+                if let Some(next) = next {
+                    let kind = next.token_val.kind();
+                    if kind == TokenKind::CloseParen {
+                        parser.next();
+                        return Ok(result)
+                    } else if kind == TokenKind::Comma {
+                        parser.next();
+                    } else { return Err(Error::UnexpectedToken((*next).clone())) }
+                } else {
+                    return Err(Error::UnexpectedEOF)
+                }
+            }
+            TokenValue::IntegerLiteral(n) => {
+                result.push(n.to_string());
+                parser.next();
+                let next = parser.peek();
+                if let Some(next) = next {
+                    let kind = next.token_val.kind();
+                    if kind == TokenKind::CloseParen {
+                        parser.next();
+                        return Ok(result)
+                    } else if kind == TokenKind::Comma {
+                        parser.next();
+                    }
+                } else {
+                    return Err(Error::UnexpectedEOF)
+                }
+            }
+            TokenValue::CloseParen => { parser.next(); break },
+            _ => return Err(Error::UnexpectedToken((*token).clone()))
+        }
+    }
+    Ok(result)
+}
+
+fn parse_macro_parameters(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<String>> {
     let mut result = vec![];
 
     while let Some(token) = parser.peek() {
@@ -211,7 +256,7 @@ fn parse_macro_definition(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>
     };
 
     let args = if next.token_val.kind() == TokenKind::OpenParen {
-        parse_macro_args(parser, diagnostics)?
+        parse_macro_parameters(parser, diagnostics)?
     } else {
         vec![]
     };
@@ -239,6 +284,43 @@ fn parse_macro_definition(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>
 
 }
 
+fn parse_macro_call(parser: &mut Parser, diagnostics: &mut Vec<Diagnostic>) -> Result<KeyValueEntry> {
+    // At this point the parser is still looking at the "@macro_name" token.
+    /* We need to first parse the arguments to the macro.
+     Then we need to register the body as a keyvalue pair inside the macro keyvalue entry, and
+     parse it as a block. 
+     macro expansion just requires that we traverse and replace the macro values with their
+     corresponding arguments.
+     Macros can only be called with the correct number of arguments, and can be redefined with
+     different arguments/different number of arguments. */ 
+
+    let current = parser.current.unwrap();
+    let name = match &current.token_val {
+        TokenValue::MacroCall(s) => s.to_string(),
+        _ => unreachable!()
+    };
+    let location = current.source_loc;
+
+    let next = match parser.next() {
+        Some(inner) => inner,
+        None => return Err(Error::UnexpectedEOF)
+    };
+
+
+    let args = match next.token_val.kind() {
+        TokenKind::OpenParen => parse_macro_arguments(parser, diagnostics)?,
+        _ => { unimplemented!(); },
+    };
+
+    parser.expect(TokenKind::Assignment)?;
+
+
+    let value = parse_value(parser, diagnostics)?;
+    
+    Ok(KeyValueEntry::new(Key::MacroSignature { name, args }, location, value)) 
+}
+
+
 pub fn parse(tokens: &[Token], diagnostics: &mut Vec<Diagnostic>) -> Result<KeyValueBlock> {
     use crate::token::TokenValue;
     let mut parser = Parser::new(tokens);
@@ -251,7 +333,11 @@ pub fn parse(tokens: &[Token], diagnostics: &mut Vec<Diagnostic>) -> Result<KeyV
             },
             TokenValue::Macro => {
                 parse_macro_definition(&mut parser, diagnostics)?
-            }
+            },
+            TokenValue::MacroCall(p) => {
+                let result = parse_macro_call(&mut parser, diagnostics)?;
+                result
+            },
             _ => return Err(Error::UnexpectedToken((*token).clone()))
         };
         entries.add(tmp);
