@@ -109,9 +109,9 @@ pub fn lex(text: &str, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<Token>> 
                 }
 
                 let value = if is_float {
-                    TokenValue::FloatLiteral(buffer.parse::<f64>().unwrap())
+                    TokenValue::FloatLiteral(buffer.parse::<f64>().map_err(Error::MalformedFloat)?)
                 } else {
-                    TokenValue::IntegerLiteral(buffer.parse::<u64>().unwrap())
+                    TokenValue::IntegerLiteral(buffer.parse::<i64>().map_err(Error::MalformedInteger)?)
                 };
 
                 tokens.push(Token::new(value, SourceLoc::new(line, col)));

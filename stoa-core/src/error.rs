@@ -1,3 +1,5 @@
+use std::num::{ParseFloatError, ParseIntError};
+
 use crate::token::Token;
 
 pub type Result<T> = ::core::result::Result<T, Error>;
@@ -8,6 +10,9 @@ pub enum Error {
     Fs(std::io::Error),
     UnterminatedString,
     MalformedMacroParameterName,
+
+    MalformedFloat(ParseFloatError),
+    MalformedInteger(ParseIntError),
 
     // Parser
     UnexpectedToken(Token),

@@ -1,6 +1,7 @@
-[package]
-name = "stoa"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = [
+  "stoa-core",
+  "stoa-cli",
+]
+resolver  = "2"
 
-[dependencies]

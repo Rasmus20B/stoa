@@ -60,7 +60,7 @@ pub enum TokenValue {
     Assignment,
 
     Identifier(String),
-    IntegerLiteral(u64),
+    IntegerLiteral(i64),
     FloatLiteral(f64),
     String(String),
 
@@ -111,7 +111,7 @@ impl TokenValue {
         }
     } 
 
-    pub fn as_integer(&self) -> Option<u64> {
+    pub fn as_integer(&self) -> Option<i64> {
         match self {
             Self::IntegerLiteral(n) => Some(*n),
             _ => None,

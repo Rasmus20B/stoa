@@ -1,0 +1,7 @@
+[package]
+name = "stoa-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+stoa-core = { version = "0.1.0", path = "../stoa-core" }

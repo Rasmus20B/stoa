@@ -3,5 +3,12 @@
 version = 3
 
 [[package]]
-name = "stoa"
+name = "stoa-cli"
+version = "0.1.0"
+dependencies = [
+ "stoa-core",
+]
+
+[[package]]
+name = "stoa-core"
 version = "0.1.0"

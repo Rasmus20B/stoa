@@ -37,7 +37,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn expect_object_id(&mut self) -> Result<u64> {
+    pub fn expect_object_id(&mut self) -> Result<i64> {
         let tmp = self.expect(TokenKind::IntegerLiteral)?;
         match tmp.token_val {
             TokenValue::IntegerLiteral(n) => Ok(n),
