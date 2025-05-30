@@ -1,0 +1,10 @@
+# Fixture that should fail. This is due to the fact that
+# only block fields can be appended. Types of Values cannot change.
+# Direct mappings from keys to numbers are immutable.
+# mappings from keys to blocks are appendable.
+
+constant_number = 32;
+
+constant_number += {
+  nested_number = 32;
+}

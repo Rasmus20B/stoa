@@ -27,11 +27,10 @@ impl Token {
     }
 }
 
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TokenKind {
-
     Assignment,
+    Append,
     Identifier,
     IntegerLiteral,
     FloatLiteral,
@@ -58,7 +57,7 @@ pub enum TokenKind {
 #[derive(Clone, Debug, PartialEq)]
 pub enum TokenValue {
     Assignment,
-
+    Append,
     Identifier(String),
     IntegerLiteral(i64),
     FloatLiteral(f64),
@@ -83,20 +82,19 @@ pub enum TokenValue {
     MacroCall(String),
 }
 
-
-
 impl TokenValue {
     pub fn kind(&self) -> TokenKind {
         match self {
-            Self::Assignment =>TokenKind::Assignment,
+            Self::Assignment => TokenKind::Assignment,
+            Self::Append => TokenKind::Append,
             Self::Identifier(_) => TokenKind::Identifier,
             Self::IntegerLiteral(_) => TokenKind::IntegerLiteral,
             Self::FloatLiteral(_) => TokenKind::FloatLiteral,
-            Self::String(_) =>TokenKind::String,
+            Self::String(_) => TokenKind::String,
             Self::True => TokenKind::True,
             Self::False => TokenKind::False,
-            Self::OpenBrace =>TokenKind::OpenBrace,
-            Self::CloseBrace =>TokenKind::CloseBrace,
+            Self::OpenBrace => TokenKind::OpenBrace,
+            Self::CloseBrace => TokenKind::CloseBrace,
             Self::OpenParen => TokenKind::OpenParen,
             Self::CloseParen => TokenKind::CloseParen,
             Self::OpenSquare => TokenKind::OpenSquare,
@@ -104,12 +102,12 @@ impl TokenValue {
             Self::Comma => TokenKind::Comma,
             Self::Colon => TokenKind::Colon,
             Self::Exclamation => TokenKind::Exclamation,
-            Self::EOF =>TokenKind::EOF,
+            Self::EOF => TokenKind::EOF,
             Self::Macro => TokenKind::Macro,
             Self::MacroParameter(_) => TokenKind::MacroParameter,
             Self::MacroCall(_) => TokenKind::MacroCall,
         }
-    } 
+    }
 
     pub fn as_integer(&self) -> Option<i64> {
         match self {
@@ -134,16 +132,14 @@ impl TokenValue {
 }
 
 pub struct KeywordEntry {
-    pub text: &'static str,// Top level objects
+    pub text: &'static str, // Top level objects
     pub val: TokenValue,
 }
 
-pub const KEYWORD_MAP: [KeywordEntry; 1] = [
-    KeywordEntry {
-        text: "macro",
-        val: TokenValue::Macro,
-    },
-];
+pub const KEYWORD_MAP: [KeywordEntry; 1] = [KeywordEntry {
+    text: "macro",
+    val: TokenValue::Macro,
+}];
 
 pub fn match_keyword(word: &str) -> Option<TokenValue> {
     KEYWORD_MAP

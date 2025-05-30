@@ -111,7 +111,9 @@ pub fn lex(text: &str, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<Token>> 
                 let value = if is_float {
                     TokenValue::FloatLiteral(buffer.parse::<f64>().map_err(Error::MalformedFloat)?)
                 } else {
-                    TokenValue::IntegerLiteral(buffer.parse::<i64>().map_err(Error::MalformedInteger)?)
+                    TokenValue::IntegerLiteral(
+                        buffer.parse::<i64>().map_err(Error::MalformedInteger)?,
+                    )
                 };
 
                 tokens.push(Token::new(value, SourceLoc::new(line, col)));
@@ -123,7 +125,7 @@ pub fn lex(text: &str, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<Token>> 
                     if *next_c == '"' {
                         iter.next();
                         break;
-                    } 
+                    }
                     buffer.push(*next_c);
                     iter.next();
                 }
@@ -131,6 +133,17 @@ pub fn lex(text: &str, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<Token>> 
                     TokenValue::String(buffer),
                     SourceLoc::new(line, col),
                 ));
+            }
+            '+' => {
+                let Some((c, _, _)) = iter.peek() else {
+                    return Err(Error::UnexpectedEOF);
+                };
+
+                if !(c == '=') {
+                    return Err(Error::MalformedAppend);
+                }
+
+                tokens.push(Token::new(TokenValue::Append, SourceLoc::new(line, col)))
             }
             '=' => tokens.push(Token::new(
                 TokenValue::Assignment,
@@ -143,14 +156,19 @@ pub fn lex(text: &str, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<Token>> 
             )),
             ',' => tokens.push(Token::new(TokenValue::Comma, SourceLoc::new(line, col))),
             '(' => tokens.push(Token::new(TokenValue::OpenParen, SourceLoc::new(line, col))),
-            ')' => tokens.push(Token::new(TokenValue::CloseParen, SourceLoc::new(line, col))),
+            ')' => tokens.push(Token::new(
+                TokenValue::CloseParen,
+                SourceLoc::new(line, col),
+            )),
             '$' => {
                 let mut buffer = String::new();
                 let Some(next_c) = iter.chars.peek() else {
-                    return Err(Error::UnexpectedEOF)
+                    return Err(Error::UnexpectedEOF);
                 };
 
-                if !next_c.is_alphabetic() { return Err(Error::MalformedMacroParameterName) }
+                if !next_c.is_alphabetic() {
+                    return Err(Error::MalformedMacroParameterName);
+                }
 
                 while let Some(next_c) = iter.chars.peek() {
                     if !next_c.is_alphanumeric() {
@@ -160,15 +178,20 @@ pub fn lex(text: &str, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<Token>> 
                     iter.next();
                 }
 
-                tokens.push(Token::new(TokenValue::MacroParameter(buffer), SourceLoc::new(line, col)));
+                tokens.push(Token::new(
+                    TokenValue::MacroParameter(buffer),
+                    SourceLoc::new(line, col),
+                ));
             }
-            '@' =>  {
+            '@' => {
                 let mut buffer = String::new();
                 let Some(next_c) = iter.chars.peek() else {
-                    return Err(Error::UnexpectedEOF)
+                    return Err(Error::UnexpectedEOF);
                 };
 
-                if !next_c.is_alphabetic() { return Err(Error::MalformedMacroParameterName) }
+                if !next_c.is_alphabetic() {
+                    return Err(Error::MalformedMacroParameterName);
+                }
 
                 while let Some(next_c) = iter.chars.peek() {
                     if !next_c.is_alphanumeric() {
@@ -177,8 +200,11 @@ pub fn lex(text: &str, diagnostics: &mut Vec<Diagnostic>) -> Result<Vec<Token>> 
                     buffer.push(*next_c);
                     iter.next();
                 }
-                tokens.push(Token::new(TokenValue::MacroCall(buffer), SourceLoc::new(line, col)));
-            },
+                tokens.push(Token::new(
+                    TokenValue::MacroCall(buffer),
+                    SourceLoc::new(line, col),
+                ));
+            }
             _ => {}
         }
     }
@@ -196,7 +222,10 @@ mod tests {
         let text = "table 1 Quotes Machines 2";
         let mut diags = vec![];
         let tokens = lex(text, &mut diags).unwrap();
-        assert_eq!(tokens[0].token_val, TokenValue::Identifier("table".to_string()));
+        assert_eq!(
+            tokens[0].token_val,
+            TokenValue::Identifier("table".to_string())
+        );
         assert_eq!(tokens[1].token_val, TokenValue::IntegerLiteral(1));
         assert_eq!(
             tokens[2].token_val,
@@ -206,10 +235,7 @@ mod tests {
             tokens[3].token_val,
             TokenValue::Identifier(String::from("Machines"))
         );
-        assert_eq!(
-            tokens[4].token_val,
-            TokenValue::IntegerLiteral(2)
-        );
+        assert_eq!(tokens[4].token_val, TokenValue::IntegerLiteral(2));
     }
 
     #[test]
@@ -217,7 +243,10 @@ mod tests {
         let text = "table \"Quotes\" Machines 1.64 Quotes Machines 2";
         let mut diags = vec![];
         let tokens = lex(text, &mut diags).unwrap();
-        assert_eq!(tokens[0].token_val, TokenValue::Identifier("table".to_string()));
+        assert_eq!(
+            tokens[0].token_val,
+            TokenValue::Identifier("table".to_string())
+        );
         assert_eq!(
             tokens[1].token_val,
             TokenValue::String("Quotes".to_string())
@@ -226,10 +255,7 @@ mod tests {
             tokens[2].token_val,
             TokenValue::Identifier("Machines".to_string())
         );
-        assert_eq!(
-            tokens[3].token_val,
-            TokenValue::FloatLiteral(1.64)
-        );
+        assert_eq!(tokens[3].token_val, TokenValue::FloatLiteral(1.64));
         assert_eq!(
             tokens[4].token_val,
             TokenValue::Identifier("Quotes".to_string())
@@ -238,10 +264,7 @@ mod tests {
             tokens[5].token_val,
             TokenValue::Identifier("Machines".to_string())
         );
-        assert_eq!(
-            tokens[6].token_val,
-            TokenValue::IntegerLiteral(2)
-        );
+        assert_eq!(tokens[6].token_val, TokenValue::IntegerLiteral(2));
     }
 
     #[test]
@@ -249,9 +272,18 @@ mod tests {
         let text = "table table table 1 Quotes = {}";
         let mut diags = vec![];
         let tokens = lex(text, &mut diags).unwrap();
-        assert_eq!(tokens[0].token_val, TokenValue::Identifier("table".to_string()));
-        assert_eq!(tokens[1].token_val, TokenValue::Identifier("table".to_string()));
-        assert_eq!(tokens[2].token_val, TokenValue::Identifier("table".to_string()));
+        assert_eq!(
+            tokens[0].token_val,
+            TokenValue::Identifier("table".to_string())
+        );
+        assert_eq!(
+            tokens[1].token_val,
+            TokenValue::Identifier("table".to_string())
+        );
+        assert_eq!(
+            tokens[2].token_val,
+            TokenValue::Identifier("table".to_string())
+        );
         assert_eq!(tokens[3].token_val, TokenValue::IntegerLiteral(1));
         assert_eq!(
             tokens[4].token_val,

@@ -13,6 +13,7 @@ pub enum Error {
 
     MalformedFloat(ParseFloatError),
     MalformedInteger(ParseIntError),
+    MalformedAppend,
 
     // Parser
     UnexpectedToken(Token),
